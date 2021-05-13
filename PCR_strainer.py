@@ -108,3 +108,53 @@ def parseOutput(assayDetails,args):
     command='rm '+args.output + '_' + assayDetails[0] +'_TNTBLAST_output.txt'
     subprocess.call(command,shell=True)
 
+## MAIN
+with open(args.assay) as assayFile:
+    assays=assayFile.readlines()
+
+for assayDetails in assays:
+    assayDetails=assayDetails.rstrip().split(',')
+    if len(assayDetails) in [5,7]:
+        createAssayFile(assayDetails,args)
+        runTNTBLAST(assayDetails,args)
+        parseOutput(assayDetails,args)
+    else:
+        print(','.join(assayDetails)+' is not in a recognizable format.')
+    print()
+
+## Prepare report
+print('Preparing reports...')
+data=pd.read_csv(args.output+'_PCR_results.tsv', sep='\t')
+reportData=pd.DataFrame()
+cols=['assay','target','oligo_name','oligo_seq','target_seq','errors']
+for assay in data.assay.unique():
+    assayData=data[data.assay==assay]
+    for oligoType in ['fwd_primer','rev_primer','probe']:
+        for oligo in [oligo for oligo in assayData[oligoType+'_name'].unique() if oligo!='---']:
+            oligoData=data[data[oligoType+'_name']==oligo]
+            oligoData=oligoData[['assay','target',oligoType+'_name',oligoType+'_seq',oligoType+'_loc_seq',oligoType+'_errors']]
+            oligoData.columns=cols
+            reportData=pd.concat([reportData,oligoData],sort=True)
+
+cols=['assay','oligo_name','oligo_seq','target_seq','errors']
+report=reportData[cols].drop_duplicates()
+report['count']=report.apply(lambda row: len(reportData[(reportData.assay==row.assay)&(reportData.oligo_name==row.oligo_name)&(reportData.target_seq==row.target_seq)&(reportData.errors==row.errors)]),axis=1)
+report['total']=report.apply(lambda row: report[(report.assay==row.assay)&(report.oligo_name==row.oligo_name)]['count'].sum(),axis=1)
+report['freq']=report.apply(lambda row: round(row['count']*100/row['total'],2),axis=1)
+report=report[(report.freq>=args.threshold)&(report.errors>0)]
+report=report.sort_values(by=['freq'])
+report.to_csv(args.output+'_variants.tsv',index=False,sep='\t')
+
+cols=['assay','oligo_name','errors']
+report=reportData[cols].drop_duplicates()
+report['count']=report.apply(lambda row: len(reportData[(reportData.assay==row.assay)&(reportData.oligo_name==row.oligo_name)&(reportData.errors==row.errors)]),axis=1)
+report['total']=report.apply(lambda row: report[(report.assay==row.assay)&(report.oligo_name==row.oligo_name)]['count'].sum(),axis=1)
+report['freq']=report.apply(lambda row: round(row['count']*100/row['total'],2),axis=1)
+report=report.sort_values(by=['assay','oligo_name','errors'])
+report.to_csv(args.output+'_report.tsv',index=False,sep='\t')
+
+command='rm '+args.output+'_PCR_results.tsv'
+subprocess.call(command,shell=True)
+
+print()
+print('Done.')
