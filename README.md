@@ -28,7 +28,7 @@ Running PCR_strainer requires four arguments:
 The assay file: PCR_strainer expects a csv file where each line describes a PCR assay using the following format:
   assay_name,forward_primer_name,reverse_primer_name,probe_name,forward_primer_seq,reverse_primer_seq,probe_seq
   
-  eg. BCCDC_SARS-CoV-2_RdRP,BCCDC_SARS2_RdRP_Fwd,BCCDC_SARS2_RdRP_Rev,BCCDC_SARS2_RdRP_Probe,TGCCGATAAGTATGTCCGCA,CAGCATCGTCAGAGAGTATCATCATT,TTGACACAGACTTTGTGAATG
+  eg. BCCDC_SARS2_RdRP,BCCDC_RdRP_Fwd,BCCDC_RdRP_Rev,BCCDC_RdRP_Probe,TGCCGATAAGTATGTCCGCA,CAGCATCGTCAGAGAGTATCATCATT,TTGACACAGACTTTGTGAATG
   * all oligo sequences should be writen in the 5' to 3' orientation
   ** degenerate nucleotides are permitted in the assay oligo sequences
   *** the probe name and probe sequence can be omitted for a conventional PCR
