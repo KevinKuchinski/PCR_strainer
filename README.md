@@ -28,7 +28,7 @@ Running PCR_strainer requires four arguments:
 The assay file: PCR_strainer expects a csv file where each line describes a PCR assay using the following format:
   assay_name,forward_primer_name,reverse_primer_name,probe_name,forward_primer_seq,reverse_primer_seq,probe_seq
   
-  eg. BCCDC_SARS-CoV-2_RdRP,TGCCGATAAGTATGTCCGCA,CAGCATCGTCAGAGAGTATCATCATT,TTGACACAGACTTTGTGAATG
+  eg. BCCDC_SARS-CoV-2_RdRP,BCCDC_SARS2_RdRP_Fwd,BCCDC_SARS2_RdRP_Rev,BCCDC_SARS2_RdRP_Probe,TGCCGATAAGTATGTCCGCA,CAGCATCGTCAGAGAGTATCATCATT,TTGACACAGACTTTGTGAATG
   * all oligo sequences should be writen in the 5' to 3' orientation
   ** degenerate nucleotides are permitted in the assay oligo sequences
   *** the probe name and probe sequence can be omitted for a conventional PCR
@@ -36,6 +36,59 @@ The assay file: PCR_strainer expects a csv file where each line describes a PCR 
  
 The reference genomes: PCR_strainer expects DNA sequences in FASTA format without spaces in the header. For single-stranded genomes, ensure all sequences represent the same sense (ie. all coding strand). We recommend you filter your reference genomes to remove sequences containing degenerate nucleotides in target locations to limit false negatives; thermonucleotideBLAST does not expand degenerate nucleotide possibilities for the subject sequences.
 
-The name of the output: PCR_strainer generates several TSV files. The output name will be appended to these file names (no spaces).
+The name of the output: PCR_strainer generates two TSV files. The output name will be appended to these file names (no spaces).
+
+# PCR_Strainer Reports
+PCR_strainer generates two report files. One provides metrics for the overall performance of each assay. The other provides metrics for the performance of individual oligonucleotides.
+
+## assay_report
+The assay_report indicates how many reference sequences are impacted by nucleotide mismatches and gaps acrosss all oligos for each assay. Filter this table for rows with 0 in the <b>errors</b> columns for quick overview of assay inclusivity; this will quickly show what percentage are the provided reference sequences had no gaps or mismatches against the provided assays.
+
+<b>COLUMN : DESCRIPTION<b/>
+
+  <b>assay</b> : The name of the assay from the -assay file
+  
+  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
+  
+  <b>targets_total</b> : The total number of reference sequences in the -genomes file
+  
+  <b>perc_detected</b> : Percentage of reference sequences analyzed by tntblast; missed reference sequences either indicate poor-quality sequences in the -genomes file or sequences with extreme divergence from the assay oligonucleotides
+  
+  <b>errors</b> : The number of nucleotide errors between all of the assay's oligonucleotides and oligo target sites; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
+  
+  <b>count</b>: The number of reference sequences with that row's number of errors against that row's assay
+  
+  <b>perc_of_detected</b> : Percentage of detected reference sequences with that row's number of errors against that row's assay
+  
+  <b>perc_of_total</b> : Percentage of total reference sequences with that row's number of errors against that row's assay
+
+## variant_report
+The variant_report provides information about locations in the provided reference sequences that are targeted by assay oligos, but contain gaps and mismatches. This report identifies common oligo site variants, facilitating oligo re-design.
+
+<b>COLUMN : DESCRIPTION</b>
+
+  <b>assay</b> : The name of the assay from the -assay file
+  
+  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
+  
+  <b>targets_total</b> : The total number of reference sequences in the -genomes file
+  
+  <b>perc_detected</b> : Percentage of reference sequences analyzed by tntblast; missed reference sequences either indicate poor-quality sequences in the -genomes file or sequences with extreme divergence from the assay oligonucleotides
+  
+  <b>oligo</b> : Forward primer, reverse primer, or probe
+  
+  <b>oligo_name</b> : The name of the oligo provided in the -assay file
+  
+  <b>oligo_seq</b> : The sequence of the oligo provided in the -assay file
+  
+  <b>oligo_site_variant</b> : The sequence of the hypothetical oligo that would be a perfect match for this oligo target site variant
+  
+  <b>errors</b> : The number of nucleotide errors between this row's oligo and this row's target site variant ; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
+  
+  <b>count</b>: The number of reference sequences with this row's oligo site variant
+  
+  <b>perc_of_detected</b> : Percentage of detected reference sequences with this row's oligo site variant; this row's value is used for by -threshold option
+  
+  <b>perc_of_total</b> : Percentage of total reference sequences with this row's oligo site variant
 
 Questions, feedback, and bug reports are welcome! kevin.kuchinski@bccdc.ca
