@@ -44,9 +44,9 @@ PCR_strainer generates two report files. One provides metrics for the overall pe
 ## assay_report
 The assay_report indicates how many reference sequences are impacted by nucleotide mismatches and gaps acrosss all oligos for each assay. Filter this table for rows with 0 in the <b>errors</b> columns for quick overview of assay inclusivity; this will quickly show what percentage are the provided reference sequences had no gaps or mismatches against the provided assays.
 
-<b>COLUMN : DESCRIPTION<b/>
+<b>COLUMN : DESCRIPTION
 
-  <b>assay</b> : The name of the assay from the -assay file
+  assay</b> : The name of the assay from the -assay file
   
   <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
   
@@ -65,9 +65,9 @@ The assay_report indicates how many reference sequences are impacted by nucleoti
 ## variant_report
 The variant_report provides information about locations in the provided reference sequences that are targeted by assay oligos, but contain gaps and mismatches. This report identifies common oligo site variants, facilitating oligo re-design.
 
-<b>COLUMN : DESCRIPTION</b>
+<b>COLUMN : DESCRIPTION
 
-  <b>assay</b> : The name of the assay from the -assay file
+  assay</b> : The name of the assay from the -assay file
   
   <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
   
