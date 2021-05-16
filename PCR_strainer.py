@@ -191,6 +191,18 @@ variantReport=variantReport[cols].sort_values(by=['assay','oligo','errors'])
 variantReport=variantReport[(variantReport['perc_of_detected']>args.threshold)&(variantReport['errors']>0)]
 variantReport.to_csv(args.output+'_variant_report.tsv',sep='\t',index=False)
 
+## Write missed targets report
+missedReport=pd.DataFrame()
+for assay in assayNames:
+    assayData=dataFile[dataFile.assay==assay]
+    foundTargets=set(assayData.target.unique())
+    missedTargets=allTargets-foundTargets
+    assayData=pd.DataFrame()
+    assayData['target']=list(missedTargets)
+    assayData['assay']=assay
+    missedReport=pd.concat([missedReport,assayData],sort=True)
+missedReport[['assay','target']].to_csv(args.output+'_missed_report.tsv',sep='\t',index=False)
+
 command='rm '+args.output + '_PCR_results.tsv'
 subprocess.call(command,shell=True)
 
