@@ -1,3 +1,10 @@
+# PCR_strainer - A tool for assessing inclusivity of PCR primers and probes against reference nucleotide sequences
+#
+# Kevin Kuchinski
+# British Columbia Centre for Disease Control, Public Health Laboratory
+# University of British Columbia, Department of Pathology and Laboratory Medicine
+# kevin.kuchinski@bccdc.ca
+
 import argparse
 import subprocess
 import os
