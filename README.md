@@ -48,7 +48,7 @@ The assay_report indicates how many reference sequences are impacted by nucleoti
 
   assay</b> : The name of the assay from the -assay file
   
-  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
+  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by thermonucleotideBLAST
   
   <b>targets_total</b> : The total number of reference sequences in the -genomes file
   
@@ -69,7 +69,7 @@ The variant_report provides information about locations in the provided referenc
 
   assay</b> : The name of the assay from the -assay file
   
-  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by tntblast
+  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by thermonucleotideBLAST
   
   <b>targets_total</b> : The total number of reference sequences in the -genomes file
   
@@ -90,5 +90,14 @@ The variant_report provides information about locations in the provided referenc
   <b>perc_of_detected</b> : Percentage of detected reference sequences with this row's oligo site variant; this row's value is used for by -threshold option
   
   <b>perc_of_total</b> : Percentage of total reference sequences with this row's oligo site variant
+
+## missed_report
+The missed_report provides the name of target reference sequences in the -genomes files that were not aligned by thermonucleotideBLAST. PCR_strainer provides the headers of these missed targets for trouble-shooting assays with high percentages of missed targets. These targets are generally either a) poor quality and contain too many Ns in/around the oligo target sites, or b) too divergent from the oligos.
+
+<b>COLUMN : DESCRIPTION
+
+  assay</b> : The name of the assay from the -assay file
+  
+  <b>target</b> : The FASTA header of the missed reference sequence in the -genomes file
 
 Questions, feedback, and bug reports are welcome! kevin.kuchinski@bccdc.ca
