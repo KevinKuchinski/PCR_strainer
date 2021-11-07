@@ -26,7 +26,7 @@ Running PCR_strainer requires four arguments:
   
   -t : the variant prevlance threshold for reporting (0-100)
   
-  -o : the name for the PCR_strainer output
+  -o : the name for the PCR_strainer output (and a path to the output directory)
   
   eg. python PCR_strainer.py -a BCCDC_SARS-CoV-2_RdRP.csv -g SARS-CoV-2_genomes.fasta -t 1 -o BCCDC_SARS-CoV-2_RdRP_results
 
@@ -44,10 +44,10 @@ Running PCR_strainer requires four arguments:
  
 <b>The reference genomes</b>: PCR_strainer expects DNA sequences in FASTA format without spaces in the header. For single-stranded genomes, ensure all sequences represent the same sense (e.g. all coding strand). We recommend you filter your reference genomes to remove sequences containing degenerate nucleotides in target locations to limit false negatives; thermonucleotideBLAST does not expand degenerate nucleotide possibilities for the subject sequences.
 
-<b>The name of the output</b>: PCR_strainer generates two TSV files. The output name will be appended to these file names (no spaces).
+<b>The name of the output</b>: PCR_strainer generates four TSV files. The output name will be appended to these file names (no spaces). Including a file path before the output name will write output files to that directory.
 
 # PCR_Strainer Reports
-PCR_strainer generates two report files. One provides metrics for the overall performance of each assay. The other provides metrics for the performance of individual oligonucleotides.
+PCR_strainer generates three report files and a table of raw results from TNTBLAST.
 
 ## assay_report
 The assay_report indicates how many reference sequences are impacted by nucleotide mismatches and gaps acrosss all oligos for each assay. Filter this table for rows with 0 in the <b>errors</b> columns for quick overview of assay inclusivity; this will quickly show what percentage are the provided reference sequences had no gaps or mismatches against the provided assays.
@@ -56,19 +56,19 @@ The assay_report indicates how many reference sequences are impacted by nucleoti
 
   assay</b> : The name of the assay from the -assay file
   
-  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by thermonucleotideBLAST
+  <b>total_errors</b> : The number of nucleotide errors among all of the assay's oligonucleotides; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
   
-  <b>targets_total</b> : The total number of reference sequences in the -genomes file
+  <b>target_count</b>: The number of reference sequences with the indicated number of errors for the indicated assay
   
-  <b>perc_detected</b> : Percentage of reference sequences analyzed by tntblast; missed reference sequences either indicate poor-quality sequences in the -genomes file or sequences with extreme divergence from the assay oligonucleotides
+  <b>detected_targets</b> : The number of reference sequences in the -genomes file that were analyzed by thermonucleotideBLAST
   
-  <b>errors</b> : The number of nucleotide errors between all of the assay's oligonucleotides and oligo target sites; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
+  <b>total_targets</b> : The total number of reference sequences in the -genomes file
   
-  <b>count</b>: The number of reference sequences with that row's number of errors against that row's assay
+  <b>perc_detected</b> : detected_targets as a percentage of total_targets
   
-  <b>perc_of_detected</b> : Percentage of detected reference sequences with that row's number of errors against that row's assay
+  <b>perc_of_detected</b> : target_count as a percentage of detected_targets
   
-  <b>perc_of_total</b> : Percentage of total reference sequences with that row's number of errors against that row's assay
+  <b>perc_of_total</b> : target_count as a percentage of total_targets
 
 ## variant_report
 The variant_report provides information about locations in the provided reference sequences that are targeted by assay oligos, but contain gaps and mismatches. This report identifies common oligo site variants, facilitating oligo re-design.
@@ -77,27 +77,25 @@ The variant_report provides information about locations in the provided referenc
 
   assay</b> : The name of the assay from the -assay file
   
-  <b>targets_detected</b> : The number of reference sequences in the -genomes file that were analyzed by thermonucleotideBLAST
-  
-  <b>targets_total</b> : The total number of reference sequences in the -genomes file
-  
-  <b>perc_detected</b> : Percentage of reference sequences analyzed by tntblast; missed reference sequences either indicate poor-quality sequences in the -genomes file or sequences with extreme divergence from the assay oligonucleotides
-  
   <b>oligo</b> : Forward primer, reverse primer, or probe
-  
-  <b>oligo_name</b> : The name of the oligo provided in the -assay file
   
   <b>oligo_seq</b> : The sequence of the oligo provided in the -assay file
   
-  <b>oligo_site_variant</b> : The sequence of the hypothetical oligo that would be a perfect match for this oligo target site variant
+  <b>oligo_site_variant</b> : The sequence of the hypothetical oligo that would be a perfect match for the target location in the reference sequence
   
-  <b>errors</b> : The number of nucleotide errors between this row's oligo and this row's target site variant ; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
+  <b>oligo_errors</b> : The number of nucleotide errors between this row's oligo and this row's target site variant ; this includes gaps and the total number of unannealed nucleotides (including those with complementary base pairing impacted by nearby mismatches)
   
-  <b>count</b>: The number of reference sequences with this row's oligo site variant
+  <b>target_count</b>: The number of reference sequences with the indicated oligo site variant
   
-  <b>perc_of_detected</b> : Percentage of detected reference sequences with this row's oligo site variant; this row's value is used for by -threshold option
+  <b>detected_targets</b> : The number of reference sequences in the -genomes file that were detected and analyzed by thermonucleotideBLAST
   
-  <b>perc_of_total</b> : Percentage of total reference sequences with this row's oligo site variant
+  <b>total_targets</b> : The total number of reference sequences in the -genomes file
+  
+  <b>perc_detected</b> : detected_targets as a percentage of total_targets
+  
+  <b>perc_of_detected</b> : target_count as a percentage of detected_targets
+  
+  <b>perc_of_total</b> : target_count as a percentage of total_targets
 
 ## missed_report
 The missed_report provides the name of target reference sequences in the -genomes files that were not aligned by thermonucleotideBLAST. PCR_strainer provides the headers of these missed targets for trouble-shooting assays with high percentages of missed targets. These targets are generally either a) poor quality and contain too many Ns in/around the oligo target sites, or b) too divergent from the oligos.
@@ -107,5 +105,9 @@ The missed_report provides the name of target reference sequences in the -genome
   assay</b> : The name of the assay from the -assay file
   
   <b>target</b> : The FASTA header of the missed reference sequence in the -genomes file
+  
+  <b>target_length</b> : The length of the target sequence
+  
+  <b>perc_Ns</b> : The percentage of the target sequence represented by ambiguous N bases
 
 Questions, feedback, and bug reports are welcome! kevin.kuchinski@bccdc.ca
