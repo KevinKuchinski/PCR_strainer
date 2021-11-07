@@ -99,7 +99,7 @@ The variant_report provides information about locations in the provided referenc
   
   <b>perc_of_total</b> : target_count as a percentage of total_targets
 
-## missed_report
+## missed_seqs_report
 The missed_report provides the name of target reference sequences in the -genomes files that were not aligned by thermonucleotideBLAST. PCR_strainer provides the headers of these missed targets for trouble-shooting assays with high percentages of missed targets. These targets are generally either a) poor quality and contain too many Ns in/around the oligo target sites, or b) too divergent from the oligos.
 
 <b>COLUMN : DESCRIPTION
