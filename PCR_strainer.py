@@ -31,7 +31,7 @@ def main():
     job_name, path_to_output = get_job_name_and_output_path(args.output)
     final_tntblast_results = pd.DataFrame()
     for assay_details in assays:
-        run_TNTBLAST(assay_details, args.genomes, path_to_output, args.melting)
+        #run_TNTBLAST(assay_details, args.genomes, path_to_output, args.melting)
         tntblast_results = parse_tntblast_output(assay_details, job_name, path_to_output)
         final_tntblast_results = pd.concat([final_tntblast_results, tntblast_results], sort=True)
     write_assay_report(job_name, path_to_output, final_tntblast_results, args.genomes, args.threshold)
@@ -254,6 +254,8 @@ def write_assay_report(job_name, path_to_output, tntblast_results, path_to_genom
     assay_report = pd.merge(assay_report, targets_detected, on='assay_name')
     # Count total targets
     assay_report['total_targets'] = count_targets(path_to_genomes)
+    # Calculate percentage of total targets detected by TNTBLAST
+    assay_report['perc_detected'] = round(assay_report['detected_targets'] * 100 / assay_report['total_targets'],2)
     # Calculate percentage of detected targets representing each level of total errors
     assay_report['perc_of_detected'] = round(assay_report['target_count'] * 100 / assay_report['detected_targets'],2)
     # Calculate percentage of total targets representing each level of total errors
@@ -275,7 +277,7 @@ def write_variant_report(job_name, path_to_output, tntblast_results, path_to_gen
     for oligo in ['fwd_primer', 'rev_primer', 'probe']:
         cols = ['assay_name', oligo + '_name', oligo + '_seq', oligo + '_site_seq', oligo + '_errors']
         oligo_data = tntblast_results[cols]
-        cols = ['assay_name', 'oligo_name', 'oligo_seq', 'oligo_site_seq', 'oligo_errors']
+        cols = ['assay_name', 'oligo_name', 'oligo_seq', 'oligo_site_variant', 'oligo_errors']
         oligo_data.columns = cols
         oligo_data = oligo_data[cols].groupby(cols).size().reset_index()
         oligo_data.columns = cols + ['target_count']
@@ -283,22 +285,24 @@ def write_variant_report(job_name, path_to_output, tntblast_results, path_to_gen
         variant_report = pd.concat([variant_report, oligo_data], sort=True)
     # Add lower case bases to oligo site seqs
     def compare_seqs(row):
-        a, b = row['oligo_site_seq'], row['oligo_seq']
+        a, b = row['oligo_site_variant'], row['oligo_seq']
         seq = ''.join([site_base if site_base == oligo_base else site_base.lower() for site_base, oligo_base in zip(a, b)])
         return seq
-    variant_report['oligo_site_seq'] = variant_report.apply(compare_seqs, axis=1)
+    variant_report['oligo_site_variant'] = variant_report.apply(compare_seqs, axis=1)
     # Count targets detected by each assay
     targets_detected = tntblast_results['assay_name'].value_counts().reset_index()
     targets_detected.columns = ['assay_name', 'detected_targets']
     variant_report = pd.merge(variant_report, targets_detected, on='assay_name')
     # Count total targets
     variant_report['total_targets'] = count_targets(path_to_genomes)
+    # Calculate percentage of total targets detected by TNTBLAST
+    variant_report['perc_detected'] = round(variant_report['detected_targets'] * 100 / variant_report['total_targets'],2)
     # Calculate percentage of detected targets representing each level of total errors
     variant_report['perc_of_detected'] = round(variant_report['target_count'] * 100 / variant_report['detected_targets'],2)
     # Calculate percentage of total targets representing each level of total errors
     variant_report['perc_of_total'] = round(variant_report['target_count'] * 100 / variant_report['total_targets'],2)
     # Re-order columns and sort rows
-    cols = ['assay_name', 'oligo', 'oligo_seq', 'oligo_site_seq', 'oligo_errors', 'target_count', 'detected_targets', 'total_targets']
+    cols = ['assay_name', 'oligo', 'oligo_name', 'oligo_seq', 'oligo_site_variant', 'oligo_errors', 'target_count', 'detected_targets', 'total_targets']
     cols += ['perc_of_detected', 'perc_of_total']
     variant_report = variant_report[cols]
     # Drop rows for variants with no errors
