@@ -79,6 +79,8 @@ The variant_report provides information about locations in the provided referenc
   
   <b>oligo</b> : Forward primer, reverse primer, or probe
   
+  <b>oligo_name</b> : Name of the oligo from the -assay file
+  
   <b>oligo_seq</b> : The sequence of the oligo provided in the -assay file
   
   <b>oligo_site_variant</b> : The sequence of the hypothetical oligo that would be a perfect match for the target location in the reference sequence
