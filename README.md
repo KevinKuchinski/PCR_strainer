@@ -42,7 +42,7 @@ Running PCR_strainer requires four arguments:
   * the probe name and probe sequence can be omitted for a conventional PCR
   * for amplicon sequencing schemes, enter primer pairs as lines in the same file
  
-<b>The reference genomes</b>: PCR_strainer expects DNA sequences in FASTA format without spaces in the header. For single-stranded genomes, ensure all sequences represent the same sense (ie. all coding strand). We recommend you filter your reference genomes to remove sequences containing degenerate nucleotides in target locations to limit false negatives; thermonucleotideBLAST does not expand degenerate nucleotide possibilities for the subject sequences.
+<b>The reference genomes</b>: PCR_strainer expects DNA sequences in FASTA format without spaces in the header. For single-stranded genomes, ensure all sequences represent the same sense (e.g. all coding strand). We recommend you filter your reference genomes to remove sequences containing degenerate nucleotides in target locations to limit false negatives; thermonucleotideBLAST does not expand degenerate nucleotide possibilities for the subject sequences.
 
 <b>The name of the output</b>: PCR_strainer generates two TSV files. The output name will be appended to these file names (no spaces).
 
