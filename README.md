@@ -31,11 +31,11 @@ Running PCR_strainer requires four arguments:
   eg. python PCR_strainer.py -a BCCDC_SARS-CoV-2_RdRP.csv -g SARS-CoV-2_genomes.fasta -t 1 -o BCCDC_SARS-CoV-2_RdRP_results
 
 <b>The assay file</b>: PCR_strainer expects a csv file where each line describes a PCR assay using the following format:
-  assay_name,forward_primer_name,reverse_primer_name,probe_name,forward_primer_seq,reverse_primer_seq,probe_seq
+  assay_name,forward_primer_name,forward_primer_seq,reverse_primer_name,reverse_primer_seq,probe_name,probe_seq
   
   Example assay file entry:
   ```
-  BCCDC_SARS2_RdRP,BCCDC_RdRP_Fwd,BCCDC_RdRP_Rev,BCCDC_RdRP_Probe,TGCCGATAAGTATGTCCGCA,CAGCATCGTCAGAGAGTATCATCATT,TTGACACAGACTTTGTGAATG
+  BCCDC_SARS2_RdRP,BCCDC_RdRP_Fwd,TGCCGATAAGTATGTCCGCA,BCCDC_RdRP_Rev,CAGCATCGTCAGAGAGTATCATCATT,BCCDC_RdRP_Probe,TTGACACAGACTTTGTGAATG
   ```
   * all oligo sequences should be writen in the 5' to 3' orientation
   * degenerate nucleotides are permitted in the assay oligo sequences
