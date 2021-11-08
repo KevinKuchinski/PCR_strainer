@@ -38,6 +38,9 @@ def main():
     write_variant_report(job_name, path_to_output, final_tntblast_results, args.genomes, args.threshold)
     write_missed_seqs_report(job_name, path_to_output, tntblast_results, args.genomes)
     write_tntblast_results(job_name, path_to_output, tntblast_results)
+    print()
+    print('Done.')
+    print()
 
 
 def read_assay_file(path_to_file):
