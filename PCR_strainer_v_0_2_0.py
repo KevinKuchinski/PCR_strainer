@@ -267,6 +267,9 @@ def parse_tntblast_output(assay_details, job_name, path_to_output):
     assay_name = assay_details[0]
     print('Parsing TNTBLAST output from', assay_name, '...')
     path_to_tntblast_txt_input = os.path.join(path_to_output, assay_name + '_tntblast_output.txt')
+    if os.path.exists(path_to_tntblast_txt_input) == False:
+        print('\nERROR: Expected TNTBLAST output does not exist.\n')
+        exit(1)
     with open(path_to_tntblast_txt_input, 'r') as input_file:
         # Write header to output file
         input_lines = input_file.readlines()
