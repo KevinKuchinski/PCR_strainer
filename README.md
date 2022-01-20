@@ -14,7 +14,7 @@ $ pcr_strainer -a <assay CSV file> -g <genomes FASTA file> -o <output dir>/<outp
 
 <b>Optional arguments:</b>
 
-	-t : minimum prevalence (%) of primer site variants reported in reports (default = 0 (reports everything), min > 0, max < 100)
+	-t : minimum prevalence (%) of total errors and oligo site variants reported in reports (default = 0 (reports everything), min > 0, max < 100)
 	-m : minimum Tm (degrees C) for primers and probes (default = 45)
 	-p : molar concentration of primer oligos (uM) (default = 1, min > 0)
 	-P : molar concentration of probe oligos (uM) (default = 1, min > 0)
