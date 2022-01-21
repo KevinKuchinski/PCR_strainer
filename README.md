@@ -108,4 +108,8 @@ The missed_report provides the name of target reference sequences in the genomes
   
   <b>perc_Ns</b> : The percentage of the target sequence represented by ambiguous N bases
 
+## PCR_results
+This  file contains the parsed and tabulated output from TNTBLAST. Each line describes the results from one assasy against one reference sequence. One use for this data is to identify headers for genome sequences containing specific oligo site variants. For instance, imagine the variant_report identifies a forward primer site variant in 5% of genomes. The sequence for that forward primer site variant could be copied from the variant_report, then used to search the fwd_primer_site_seq column in the PCR_results files to identify headers for sequences containing this variant.
+
+# ---
 Questions, feedback, and bug reports are welcome! kevin.kuchinski@bccdc.ca
