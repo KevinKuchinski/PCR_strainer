@@ -57,9 +57,9 @@ def parse_args(args, version):
     # Set defaults, mins, and maxs
     required_args = {'-a', '-g', '-o'}
     arg_value_types = {'-a': str, '-g':str, '-o': str, '-t': float, '-m': float, '-p': float, '-P': float}
-    min_arg_values = {'-t': 0, '-m': 0, '-p': 0, '-P': 0}
-    max_arg_values = {'-t': 100, '-m': 100}
-    default_arg_values = {'-t': 5, '-m': 45, '-p': 1, '-P': 1}
+    min_arg_values = {'-t': 0, '-p': 0, '-P': 0}
+    max_arg_values = {'-t': 100}
+    default_arg_values = {'-t': 0, '-m': 45, '-p': 1, '-P': 1}
     # Check if all required arguments were provided
     missing_args = set()
     for required_arg in required_args:
@@ -98,12 +98,12 @@ def parse_args(args, version):
             exit(1)
     # Check if provided values are within the correct range
     for arg, value in arg_values.items():
-        if arg in min_arg_values.keys() and value < min_arg_values[arg]:
-            print(f'\nERROR: Value for argument {arg} must at least {min_arg_values[arg]}')
+        if arg in min_arg_values.keys() and value <= min_arg_values[arg]:
+            print(f'\nERROR: Value for argument {arg} must be greater than {min_arg_values[arg]}')
             print_usage(version)
             exit(1)
-        if arg in max_arg_values.keys() and value > max_arg_values[arg]:
-            print(f'\nERROR: Value for argument {arg} must not exceed {max_arg_values[arg]}')
+        if arg in max_arg_values.keys() and value >= max_arg_values[arg]:
+            print(f'\nERROR: Value for argument {arg} must be less than {max_arg_values[arg]}')
             print_usage(version)
             exit(1)        
     # Assign default values to unspecified arguments
