@@ -15,7 +15,7 @@ import pandas as pd
 
 
 def main():
-    version = '0.2.0'
+    version = '0.2.3'
     # Parse command line arguments
     args = parse_args(sys.argv, version)
     print(f'\nPCR_strainer v{version}')
@@ -484,20 +484,34 @@ def align_seqs(seq_1, seq_2):
 
 def write_oligo_site_variant(oligo_seq, oligo_site_variant):
     seq_1_alignment, seq_2_alignment = align_seqs(oligo_seq, oligo_site_variant)
-    formatted_oligo_site_variant = []
+    seq_1, seq_2 = '', ''
     for sub_seq_1, sub_seq_2 in zip(seq_1_alignment, seq_2_alignment):
-        if sub_seq_1 == sub_seq_2:
-            formatted_oligo_site_variant += [sub_seq_2.upper()]
-        elif len(sub_seq_1) == len(sub_seq_2):
-            formatted_oligo_site_variant += [sub_seq_2.lower()]
+        if len(sub_seq_1) == len(sub_seq_2):
+            seq_1 += sub_seq_1.upper()
+            seq_2 += sub_seq_2.upper()
         elif len(sub_seq_1) > len(sub_seq_2):
-            formatted_oligo_site_variant += ['-' * (len(sub_seq_1) - len(sub_seq_2)) + sub_seq_2.lower()]
+            seq_1 += sub_seq_1.upper()
+            seq_2 += '-' * (len(sub_seq_1) - len(sub_seq_2))
+            seq_2 += sub_seq_2.upper()
         elif len(sub_seq_2) > len(sub_seq_1):
-            formatted_oligo_site_variant += ['(' + sub_seq_2.upper() + ')']
-    if seq_1_alignment[-1] == '':
-        formatted_oligo_site_variant = formatted_oligo_site_variant[:-1]
-    formatted_oligo_site_variant = ''.join(formatted_oligo_site_variant)
-    return formatted_oligo_site_variant
+            seq_1 += '-' * (len(sub_seq_2) - len(sub_seq_1))
+            seq_1 += sub_seq_1.upper()
+            seq_2 += sub_seq_2.upper()
+    oligo_site_variant = ''
+    seq_length = len(seq_1.rstrip('-'))
+    seq_1 = seq_1[:seq_length]
+    seq_2 = seq_2[:seq_length]
+    for base_1, base_2 in zip(seq_1, seq_2):
+        if base_1 == base_2:
+            oligo_site_variant += base_2.upper()
+        elif base_2 == '-':
+            oligo_site_variant += base_2
+        elif base_1 == '-':
+            oligo_site_variant += '(' + base_2.upper() + ')'
+        elif base_1 != base_2:
+            oligo_site_variant += base_2.lower()
+    oligo_site_variant = oligo_site_variant.replace(')(', '')
+    return oligo_site_variant
 
 
 def get_targets(path_to_genomes):
