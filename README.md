@@ -1,5 +1,13 @@
 # PCR_strainer
-PCR_strainer is a tool for assessing the inclusivity of primer and probe oligonucleotides from diagnostic qPCR assays and amplicon sequencing schemes. It depends on thermonucleotideBLAST (TNTBLAST), which conducts local alignments between query oligonucleotides and subject sequences that include a thermodynamic assessment of the alignment. PCR_strainer parses and tabulates the TNTBLAST output to generate reports on assay performance and sequence variants in oligo sites. TNTBLAST will need to be installed separately from: https://github.com/jgans/thermonucleotideBLAST
+PCR_strainer is a tool for assessing the inclusivity of primer and probe oligonucleotides from diagnostic qPCR assays and amplicon sequencing schemes. It depends on thermonucleotideBLAST (TNTBLAST), which conducts local alignments between query oligonucleotides and subject sequences that include a thermodynamic assessment of the alignment. PCR_strainer parses and tabulates the TNTBLAST output to generate reports on assay performance and sequence variants in oligo sites.
+
+# PCR_strainer Setup
+1. Install TNTBLAST from: https://github.com/jgans/thermonucleotideBLAST
+2. Install Python (version >= 3.7)
+3. Install PCR_strainer:
+```
+$ python3 -m pip install pcr_strainer
+```
 
 # PCR_strainer Usage
 <b>Usage example:</b>
