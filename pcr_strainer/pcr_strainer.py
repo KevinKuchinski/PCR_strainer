@@ -15,7 +15,7 @@ import pandas as pd
 
 
 def main():
-    version = '0.2.3'
+    version = '0.2.4'
     # Parse command line arguments
     args = parse_args(sys.argv, version)
     print(f'\nPCR_strainer v{version}')
