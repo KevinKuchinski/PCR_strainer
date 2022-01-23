@@ -15,7 +15,7 @@ import pandas as pd
 
 
 def main():
-    version = '0.2.3'
+    version = '0.2.4'
     # Parse command line arguments
     args = parse_args(sys.argv, version)
     print(f'\nPCR_strainer v{version}')
@@ -37,6 +37,7 @@ def main():
         run_TNTBLAST(assay_details, args['-g'], out_path, args['-m'], args['-p'], args['-P'])
         tntblast_results = parse_tntblast_output(assay_details, name, out_path)
         final_tntblast_results = pd.concat([final_tntblast_results, tntblast_results], sort=True)
+    # Write report files
     write_assay_report(name, out_path, final_tntblast_results, args['-g'], args['-t'])
     write_variant_report(name, out_path, final_tntblast_results, args['-g'], args['-t'])
     write_missed_seqs_report(name, out_path, final_tntblast_results, args['-g'])
@@ -123,10 +124,10 @@ def print_usage(version):
     print(' -g : path to target genomes in FASTA file')
     print(' -o : path to output directory and name to append to output files')
     print('Optional arguments:')
-    print(' -t : minimum prevalence (%) of primer site variants reported in reports (default=5, min=0, max=100)')
-    print(' -m : minimum Tm (degrees C) for primers and probes (default=45, min=0, max=100)')
-    print(' -p : molar concentration of primer oligos (uM) (default=1, min=0)')
-    print(' -P : molar concentration of probe oligos (uM) (default=1, min=0)\n')
+    print(' -t : minimum prevalence (%) of primer site variants reported in reports (default=0, min > 0, max < 100)')
+    print(' -m : minimum Tm (degrees C) for primers and probes (default=45)')
+    print(' -p : molar concentration of primer oligos (uM) (default=1, min > 0)')
+    print(' -P : molar concentration of probe oligos (uM) (default=1, min > 0)\n')
 
 
 def check_genomes_file(path_to_file):
@@ -230,7 +231,10 @@ def run_TNTBLAST(assay_details, path_to_genomes, path_to_output, melting_temp, p
     terminal_command = (f'tntblast -i {path_to_tntblast_assay} -d {path_to_genomes} -o {path_to_tntblast_txt_output}'
                         f' -e {melting_temp} -E {melting_temp} -t {primer_molarity / 1000000} -T {probe_molarity / 1000000}'
                         f' --best-match -m 0 -v F')
-    subprocess.run(terminal_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    completed_process = subprocess.run(terminal_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    if completed_process.returncode != 0:
+        print(f'\nERROR: TNTBLAST terminated with errors.\nTNTBLAST error code: {completed_process.returncodes}\n')
+        exit(1)
     # GARBAGE COLLECTION (remove TNTBLAST assay TSV file)
     os.remove(path_to_tntblast_assay)
     print()
@@ -239,7 +243,68 @@ def run_TNTBLAST(assay_details, path_to_genomes, path_to_output, melting_temp, p
 def parse_tntblast_output(assay_details, job_name, path_to_output):
     """Parses txt format output from TNTBLAST and tabulates relevant data into Pandas dataframes.
     Returns the dataframe."""
-    # Values for getting complement of base
+    # Create list of fields to capture from results
+    oligos = ['forward primer', 'reverse primer', 'probe']
+    fields = ['amplicon range', 'probe range']
+    fields += ['name', 'target'] + [oligo + ' mismatches' for oligo in oligos]
+    fields += [oligo + ' gaps' for oligo in oligos] + ['amplicon seq']
+    # Create empty dict for tntblast results
+    tntblast_results = {field: [] for field in fields}
+    # Open TNTBLAST output and parse results into dataframe
+    assay_name = assay_details[0]
+    print('Parsing TNTBLAST output from', assay_name, '...')
+    path_to_tntblast_txt_input = os.path.join(path_to_output, assay_name + '_tntblast_output.txt')
+    if os.path.exists(path_to_tntblast_txt_input) == False:
+        print('\nERROR: Expected TNTBLAST output does not exist.\n')
+        exit(1)
+    with open(path_to_tntblast_txt_input, 'r') as input_file:
+        input_lines = input_file.readlines()
+    for line_index, line in enumerate(input_lines):
+        if ' = ' in line:
+            key, value = line.split(' = ')
+            if key in fields:
+                tntblast_results[key].append(value.strip())
+        elif line[0] == '>':
+            tntblast_results['target'].append(line.strip().lstrip('>'))
+            tntblast_results['amplicon seq'].append(input_lines[line_index+1].strip())
+            # Add NaN for probe oligo fields if probe not provided
+            if assay_details[5] == '' and assay_details[6] == '':
+                tntblast_results['probe mismatches'].append(np.nan)
+                tntblast_results['probe gaps'].append(np.nan)
+                tntblast_results['probe range'].append(np.nan)
+    # Convert dictionary to dataframe and re-order columns
+    tntblast_results = pd.DataFrame.from_dict(tntblast_results)
+    tntblast_results = tntblast_results[fields]
+    # Rename columns
+    oligos = ['fwd_primer', 'rev_primer', 'probe']
+    cols = ['amplicon_range', 'probe_range']
+    cols += ['assay_name', 'target'] + [oligo + '_mismatches' for oligo in oligos]
+    cols += [oligo + '_gaps' for oligo in oligos] + ['amplicon_seq']
+    tntblast_results.columns = cols
+    # Convert mismatches and gaps columns to ints
+    oligos = ['fwd_primer', 'rev_primer']
+    if assay_details[5] != '' and assay_details[6] != '':
+        oligos += ['probe']
+    for oligo in oligos:
+        tntblast_results[oligo + '_mismatches'] = tntblast_results[oligo + '_mismatches'].astype(int)
+        tntblast_results[oligo + '_gaps'] = tntblast_results[oligo + '_gaps'].astype(int)
+    # Add column for total oligo errors
+    for oligo in oligos:
+        tntblast_results[oligo + '_errors'] = tntblast_results[oligo + '_mismatches'] + tntblast_results[oligo + '_gaps']
+    if assay_details[5] == '' and assay_details[6] == '':
+        tntblast_results['probe_errors'] = np.nan
+    # Add column for total assay errors
+    tntblast_results['total_errors'] = tntblast_results[[oligo + '_errors' for oligo in oligos]].sum(axis=1)
+    # Add columns for oligo names and oligo seqs
+    oligos = ['fwd_primer', 'rev_primer', 'probe']
+    oligo_names = [assay_details[i] for i in [1, 3, 5]]
+    oligo_seqs = [assay_details[i] for i in [2, 4, 6]]
+    for oligo, name, seq in zip(oligos, oligo_names, oligo_seqs):
+        tntblast_results[oligo + '_name'] = name
+        tntblast_results[oligo + '_name'] = tntblast_results[oligo + '_name'].replace('', np.nan)
+        tntblast_results[oligo + '_seq'] = seq
+        tntblast_results[oligo + '_seq'] = tntblast_results[oligo + '_seq'].replace('', np.nan)
+    # Function for getting reverse complement of sequence
     comp_bases = {'A': 'T', 'T': 'A',
                   'G': 'C', 'C': 'G',
                   'W': 'W', 'S': 'S',
@@ -248,89 +313,41 @@ def parse_tntblast_output(assay_details, job_name, path_to_output):
                   'B': 'V', 'V': 'B',
                   'D': 'H', 'H': 'D',
                   'N': 'N', '-': '-'}
-    # Function for getting reverse complement of sequence
     rev_comp = lambda seq: ''.join([comp_bases[base] for base in seq[::-1]])
-    # Create list of relevant fields in TNTBLAST output
-    oligo_names = ['forward primer', 'reverse primer', 'probe']
-    fields = ['', ' tm', ' mismatches', ' gaps']
-    input_fields = [oligo + field for oligo in oligo_names for field in fields]
-    input_fields += ['amplicon' + field for field in [' range', ' length']] + ['probe range']
-    # Create list of fields to store in tntblast results
-    oligo_names = ['forward primer', 'reverse primer', 'probe']
-    fields = [' name', ' seq', ' mismatches', ' gaps', ' errors', ' site seq']
-    output_fields = ['assay name', 'target', 'total errors']
-    output_fields += [oligo + field for oligo in oligo_names for field in fields]
-    output_fields += ['amplicon seq']
-    # Create dict of lists for storing results from parsing
-    tntblast_results = {field: [] for field in output_fields}
-    # Open TNTBLAST output and parse into dataframe
-    assay_name = assay_details[0]
-    print('Parsing TNTBLAST output from', assay_name, '...')
-    path_to_tntblast_txt_input = os.path.join(path_to_output, assay_name + '_tntblast_output.txt')
-    if os.path.exists(path_to_tntblast_txt_input) == False:
-        print('\nERROR: Expected TNTBLAST output does not exist.\n')
-        exit(1)
-    with open(path_to_tntblast_txt_input, 'r') as input_file:
-        # Write header to output file
-        input_lines = input_file.readlines()
-        for line_index, line in enumerate(input_lines):
-            if ' = ' in line: 
-                key, value = line.rstrip().split(' = ')
-                if key == 'name': # Initialize new entry if key is 'name'
-                    entry = {}
-                    entry['assay name'] = assay_name
-                    for key in input_fields:
-                        entry[key] = 'none'
-                elif key in input_fields:
-                    entry[key] = value
-            elif line[0] == '>':
-                # If line starts with '>', it signals 3 things:
-                # 1. the name of the target is on this line
-                # 2. the seq of the amplicon is on the following line
-                # 3. the end of the current entry, so it can be added to the overall results
-                entry['target'] = line.lstrip('>').rstrip()
-                entry['amplicon seq'] = input_lines[line_index+1].rstrip()
-                # Count number of mismatches and gaps for each oligo and add together for errors
-                oligos = ['forward primer', 'reverse primer', 'probe']
-                oligo_names = [assay_details[i] for i in [1, 3, 5]]
-                oligo_seqs = [assay_details[i] for i in [2, 4, 6]]
-                for oligo, oligo_name, oligo_seq in zip(oligos, oligo_names, oligo_seqs):
-                    if entry[oligo] != 'none':
-                        if entry[oligo + ' mismatches'] == 'none':
-                            entry[oligo + ' mismatches'] = 0
-                        else:
-                            entry[oligo + ' mismatches'] = int(entry[oligo + ' mismatches'])
-                        if entry[oligo + ' gaps'] == 'none':
-                            entry[oligo + ' gaps'] = 0
-                        else:
-                            entry[oligo + ' gaps'] = int(entry[oligo + ' gaps'])
-                        mismatches = int(entry[oligo + ' mismatches'])
-                        gaps = int(entry[oligo + ' gaps'])
-                        entry[oligo + ' errors'] =  mismatches + gaps
-                    # Add name and sequence of oligo to entry
-                    entry[oligo + ' name'] = oligo_name
-                    entry[oligo + ' seq'] = oligo_seq  
-                # Extract oligo site sequences from amplicon seq
-                primer_length = len(entry['forward primer seq']) + entry['forward primer gaps']
-                entry['forward primer site seq'] = entry['amplicon seq'][:primer_length]
-                primer_length = len(entry['reverse primer seq']) + entry['reverse primer gaps']
-                entry['reverse primer site seq'] = rev_comp(entry['amplicon seq'][-primer_length:])
-                if entry['probe range'] != 'none':
-                    start = int(entry['probe range'].split(' .. ')[0]) - int(entry['amplicon range'].split(' .. ')[0])
-                    end = int(entry['probe range'].split(' .. ')[1]) - int(entry['amplicon range'].split(' .. ')[1])
-                    entry['probe site seq'] = entry['amplicon seq'][start:end]
-                entry['total errors'] = sum([entry[oligo + ' errors'] for oligo in ['forward primer', 'reverse primer', 'probe']])
-                # Add values from this entry to overall results
-                for field in output_fields:
-                    tntblast_results[field].append(entry[field])
-    # Replace spaces in column names with underscores
-    tntblast_results = {field.replace(' ', '_'): tntblast_results[field] for field in output_fields}
-    # Replace full spelling of primers with shortened versions (forward to fwd, and reverse to rev)
-    for oligo, short_oligo in zip(['forward_primer', 'reverse_primer'], ['fwd_primer', 'rev_primer']):
-        tntblast_results = {field.replace(oligo, short_oligo): tntblast_results[field] for field in tntblast_results.keys()}
-    # Create dataframe from dictionary of parsed results
-    tntblast_results = pd.DataFrame.from_dict(tntblast_results)
-    # Garbage collection
+    # Extract oligo site seqs from amplicon seq
+    def get_fwd_primer_site(row):
+        fwd_primer_seq = row['fwd_primer_seq']
+        site_length = len(row['fwd_primer_seq']) + row['fwd_primer_gaps']
+        fwd_primer_site_seq = row['amplicon_seq'][:site_length]
+        fwd_primer_site_seq = write_oligo_site_variant(fwd_primer_seq, fwd_primer_site_seq)
+        return fwd_primer_site_seq
+    tntblast_results['fwd_primer_site_seq'] = tntblast_results.apply(get_fwd_primer_site, axis=1)
+    def get_rev_primer_site(row):
+        rev_primer_seq = row['rev_primer_seq']
+        site_length = len(row['rev_primer_seq']) + row['rev_primer_gaps']
+        rev_primer_site_seq = rev_comp(row['amplicon_seq'][-site_length:])
+        rev_primer_site_seq = write_oligo_site_variant(rev_primer_seq, rev_primer_site_seq)
+        return rev_primer_site_seq
+    tntblast_results['rev_primer_site_seq'] = tntblast_results.apply(get_rev_primer_site, axis=1)
+    def get_probe_site(row):
+        probe_start = int(row['probe_range'][0]) - int(row['amplicon_range'][0])
+        probe_length = int(row['probe_range'][1]) - int(row['probe_range'][0]) + row['probe_gaps'] + 1
+        probe_end = probe_start + probe_length
+        probe_site_seq = row['amplicon_seq'][probe_start:probe_end]
+        probe_site_seq = write_oligo_site_variant(row['probe_seq'], probe_site_seq)
+        return probe_site_seq
+    if assay_details[5] == '' and assay_details[6] == '':
+        tntblast_results['probe_site_seq'] = np.nan
+    else:
+        tntblast_results['amplicon_range'] = tntblast_results['amplicon_range'].str.split(' .. ')
+        tntblast_results['probe_range'] = tntblast_results['probe_range'].str.split(' .. ')
+        tntblast_results['probe_site_seq'] = tntblast_results.apply(get_probe_site, axis=1)
+    # Re-order columns
+    oligos = ['fwd_primer', 'rev_primer', 'probe']
+    oligo_cols = ['name', 'seq', 'site_seq', 'mismatches', 'gaps', 'errors']
+    cols = ['assay_name', 'target', 'total_errors'] + [oligo + '_' + col for oligo in oligos for col in oligo_cols]
+    tntblast_results = tntblast_results[cols]
+    # GARBAGE COLLECTION
     os.remove(path_to_tntblast_txt_input)
     print()
     return tntblast_results
@@ -339,23 +356,14 @@ def parse_tntblast_output(assay_details, job_name, path_to_output):
 def write_tntblast_results(job_name, path_to_output, tntblast_results):
     """Writes tabulated results in Pandas dataframe to a TSV file."""
     print('Writing PCR results...')
-    # Create formatted oligo site seqs
+    # Re-order columns
     oligos = ['fwd_primer', 'rev_primer', 'probe']
-    for oligo in oligos:
-        cols = [oligo + '_name', oligo + '_seq', oligo + '_site_seq']
-        oligo_site_seqs = tntblast_results[cols].drop_duplicates()
-        write_seq = lambda row: write_oligo_site_variant(row[oligo + '_seq'], row[oligo + '_site_seq'])
-        oligo_site_seqs[oligo + '_site_seq_new'] = oligo_site_seqs.apply(write_seq, axis=1)
-        tntblast_results = pd.merge(tntblast_results, oligo_site_seqs, on=cols)
-        tntblast_results[oligo + '_site_seq'] = tntblast_results[oligo + '_site_seq_new']
-    # Re-order columns and save TNTBLAST results to TSV
-    oligos = ['fwd_primer', 'rev_primer', 'probe']
-    fields = ['_name', '_seq', '_mismatches', '_gaps', '_errors', '_site_seq']
-    cols = ['assay_name', 'target', 'total_errors']
-    cols += [oligo + field for oligo in oligos for field in fields]
-    cols += ['amplicon_seq']
+    oligo_cols = ['name', 'seq', 'site_seq', 'mismatches', 'gaps', 'errors']
+    cols = ['assay_name', 'target', 'total_errors'] + [oligo + '_' + col for oligo in oligos for col in oligo_cols]
+    tntblast_results = tntblast_results[cols]
+    # Write output
     path_to_tntblast_tsv = os.path.join(path_to_output, job_name + '_PCR_results.tsv')
-    tntblast_results[cols].to_csv(path_to_tntblast_tsv, sep='\t', index=False)
+    tntblast_results.to_csv(path_to_tntblast_tsv, sep='\t', index=False)
 
 
 def count_targets(path_to_genomes):
@@ -414,9 +422,6 @@ def write_variant_report(job_name, path_to_output, tntblast_results, path_to_gen
         oligo_data.columns = cols + ['target_count']
         oligo_data['oligo'] = oligo
         variant_report = pd.concat([variant_report, oligo_data], sort=True)
-    # Add lower case bases to oligo site seqs
-    write_seq = lambda row: write_oligo_site_variant(row['oligo_seq'], row['oligo_site_variant'])
-    variant_report['oligo_site_variant'] = variant_report.apply(write_seq, axis=1)
     # Count targets detected by each assay
     targets_detected = tntblast_results['assay_name'].value_counts().reset_index()
     targets_detected.columns = ['assay_name', 'detected_targets']
@@ -551,6 +556,9 @@ def write_missed_seqs_report(job_name, path_to_output, tntblast_results, path_to
             assay_data['total_Ns'] = []
             assay_data['perc_Ns'] = []
         missed_seqs_report = pd.concat([missed_seqs_report, assay_data], sort=True)
+    # Convert total length and total Ns columns to ints
+    missed_seqs_report['target_length'] = missed_seqs_report['target_length'].astype(int)
+    missed_seqs_report['total_Ns'] = missed_seqs_report['total_Ns'].astype(int)
     # Reorder columns and write report
     path_to_report_file = os.path.join(path_to_output, job_name + '_missed_seqs_report.tsv')
     cols = ['assay_name', 'target', 'target_length', 'total_Ns', 'perc_Ns']
