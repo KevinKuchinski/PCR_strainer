@@ -10,7 +10,7 @@ setup(
     description="A tool for assessing the inclusivity of primer and probe oligonucleotides from diagnostic qPCR assays and amplicon sequencing schemes.",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/KevinKuchinski/",
+    url="https://github.com/KevinKuchinski/PCR_strainer",
     author="Kevin Kuchinski",
     author_email="kevin.kuchinski@bccdc.ca",
     license="MIT",
