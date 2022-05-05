@@ -1,6 +1,10 @@
 # PCR_strainer
 PCR_strainer is a tool for assessing the inclusivity of primer and probe oligonucleotides from diagnostic qPCR assays and amplicon sequencing schemes. It depends on thermonucleotideBLAST (TNTBLAST), which conducts local alignments between query oligonucleotides and subject sequences that include a thermodynamic assessment of the alignment. PCR_strainer parses and tabulates the TNTBLAST output to generate reports on assay performance and sequence variants in oligo sites.
 
+You can read more about PCR_strainer and see how it has been applied in the following publications:
+1. Kuchinski KS, Jassem AN, Prystajecky NA. Assessing oligonucleotide designs from early lab developed PCR diagnostic tests for SARS-CoV-2 using the PCR_strainer pipeline. J Clin Virol. 2020 Oct;131:104581. doi: 10.1016/j.jcv.2020.104581. Epub 2020 Aug 21. PMID: 32889496; PMCID: PMC7441044.
+2. Kuchinski KS, Nguyen J, Lee TD, Hickman R, Jassem AN, Hoang LMN, Prystajecky NA, Tyson JR. Mutations in emerging variant of concern lineages disrupt genomic sequencing of SARS-CoV-2 clinical specimens. Int J Infect Dis. 2022 Jan;114:51-54. doi: 10.1016/j.ijid.2021.10.050. Epub 2021 Oct 29. PMID: 34757201; PMCID: PMC8555373.
+
 # PCR_strainer Setup
 1. Install TNTBLAST from: https://github.com/jgans/thermonucleotideBLAST
 2. Install Python (version >= 3.7)
@@ -48,7 +52,7 @@ PCR_strainer expects DNA sequences in FASTA format without spaces in the header.
 
 PCR_strainer generates four TSV files. The output name will be appended to these file names (no spaces). Including a file path before the output name will write output files to that directory.
 
-# PCR_Strainer Reports
+# PCR_strainer Reports
 PCR_strainer generates three report files and a table of raw results from TNTBLAST.
 
 ## assay_report
